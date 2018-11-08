@@ -56,7 +56,7 @@ func main() {
 
 			// prepare scratch buffer
 			if scratch == nil {
-				scratch, err = nimvle.NewScratchBuffer("*scratch jekyll*")
+				scratch, err = nimvle.NewScratchBuffer("*scratch jekyll*", "json")
 				if err != nil {
 					return
 				}
@@ -78,6 +78,7 @@ func main() {
 			if err != nil {
 				return
 			}
+
 			return
 		})
 		return nil
