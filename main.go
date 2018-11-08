@@ -82,7 +82,7 @@ func main() {
 				return
 			}
 			buf := new(bytes.Buffer)
-			err = json.Indent(buf, b, "", "    ")
+			err = json.Indent(buf, b, "", " ")
 			if err != nil {
 				return
 			}
