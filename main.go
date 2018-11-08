@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 
@@ -26,7 +27,8 @@ func main() {
 			}()
 
 			// check args
-			if len(args) != 1 {
+			if (len(args) % 2) != 1 {
+				rerr = errors.New("args is not odd num. (url, [header, value] * N)")
 				return
 			}
 
@@ -49,7 +51,19 @@ func main() {
 			if err != nil {
 				return
 			}
-			res, err := http.Post(args[0], "", bytes.NewReader(postBody))
+			cli := &http.Client{}
+			req, err := http.NewRequest(
+				"POST",
+				args[0],
+				bytes.NewReader(postBody))
+			if err != nil {
+				return
+			}
+			for i := 1; i < len(args)-1; i += 2 {
+				// set Header
+				req.Header.Add(args[i], args[i+1])
+			}
+			res, err := cli.Do(req)
 			if err != nil {
 				return
 			}
