@@ -11,49 +11,73 @@ import (
 	"github.com/neovim/go-client/nvim/plugin"
 )
 
+var scratch *nvim.Buffer
+
 func main() {
 	plugin.Main(func(p *plugin.Plugin) error {
 		p.HandleFunction(&plugin.FunctionOptions{Name: "JekyllCurl"}, func(v *nvim.Nvim, args []string) (rs string, rerr error) {
+			// prepare nimvle
 			nimvle := nimvle.New(v, "jekill.nvim")
-			// TODO: check args
-			//       read current Buffer
-			//       curl using post to server (address defines args[0])
-			//       show response scratch buffer
+			var err error
+			defer func() {
+				if err != nil {
+					nimvle.Log(err.Error())
+				}
+			}()
+
+			// check args
 			if len(args) != 1 {
-				nimvle.Log("argment's length is not 1")
 				return
 			}
+
+			// get query in current buffer
 			currentBuf, err := v.CurrentBuffer()
 			if err != nil {
-				nimvle.Log(err.Error())
 				return
 			}
 			qlQuery, err := nimvle.GetContentFromBuffer(currentBuf)
 			if err != nil {
-				nimvle.Log(err.Error())
 				return
 			}
-			postBody, err := json.Marshal(struct {
+
+			// request to URL
+			postBody, err := json.MarshalIndent(struct {
 				Q string `json:"query"`
 			}{
 				Q: qlQuery,
-			})
+			}, "", "    ")
 			if err != nil {
-				nimvle.Log(err.Error())
 				return
 			}
 			res, err := http.Post(args[0], "", bytes.NewReader(postBody))
 			if err != nil {
-				nimvle.Log(err.Error())
 				return
 			}
+
+			// prepare scratch buffer
+			if scratch == nil {
+				scratch, err = nimvle.NewScratchBuffer("*scratch jekyll*")
+				if err != nil {
+					return
+				}
+			}
+
+			// set indent
 			b, err := ioutil.ReadAll(res.Body)
 			if err != nil {
-				nimvle.Log(err.Error())
 				return
 			}
-			// TODO: show in the scratch buffer
-			nimvle.Log(string(b))
+			buf := new(bytes.Buffer)
+			err = json.Indent(buf, b, "", "    ")
+			if err != nil {
+				return
+			}
+
+			// write scratch buffer
+			err = nimvle.ShowScratchBuffer(*scratch, buf)
+			if err != nil {
+				return
+			}
 			return
 		})
 		return nil
