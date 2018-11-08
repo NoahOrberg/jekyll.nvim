@@ -43,11 +43,11 @@ func main() {
 			}
 
 			// request to URL
-			postBody, err := json.MarshalIndent(struct {
+			postBody, err := json.Marshal(struct {
 				Q string `json:"query"`
 			}{
 				Q: qlQuery,
-			}, "", "    ")
+			})
 			if err != nil {
 				return
 			}
